@@ -24,7 +24,7 @@ Every 10 minutes, this pipeline:
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -49,7 +49,7 @@ Every 10 minutes, this pipeline:
 
 ---
 
-## 🪐 Tracked Objects
+## Tracked Objects
 
 **Planets:** Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune
 
@@ -57,7 +57,7 @@ Every 10 minutes, this pipeline:
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 ```
 NASA Horizons API
       ↓
@@ -76,13 +76,13 @@ AWS Athena (SQL)
 Streamlit Dashboard
 ```
 
-## 📡 Data Source
+## Data Source
 
-All positional data comes from **NASA JPL Horizons** 
+All positional data comes from **NASA JPL Horizons**: https://ssd.jpl.nasa.gov/horizons/#api
 
 ---
 
-## 📝 License
+## License
 
 MIT License — free to use, modify, and share.
 
