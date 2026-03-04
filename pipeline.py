@@ -22,8 +22,8 @@ PLANETS = {
 
 COMETS = {
     "Halley":            "90000030",
-    "Hale-Bopp":         "90000765",
-    "Churyumov-Geras.":  "90000772",
+    "Hale-Bopp":         "Hale-Bopp",
+    "Churyumov-Geras.":  "90000701",
     "Encke":             "90000035",
 }
 

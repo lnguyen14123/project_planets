@@ -121,11 +121,7 @@ def test_object(name, cmd):
     data = query_horizons(cmd)
     if data and "result" in data:
         print(f"\n--- {name} ({cmd}) ---")
-        # Print the target body line
-        for line in data["result"].split("\n"):
-            if "Target body name" in line:
-                print(line)
-                break
+        print(data["result"][:1000])
 
 
 def search_horizons(name):
@@ -163,5 +159,5 @@ if __name__ == "__main__":
     #     bar = "█" * int(obj["speed_kms"] / 3)
     #     print(f"  {obj['target_name']:<25} {obj['speed_kms']:>7} km/s  {bar}")
 
-    search_horizons("Hale-Bopp")
-    search_horizons("Churyumov-Gerasimenko")
+    test_object("Hale-Bopp", "Hale-Bopp")
+    test_object("Churyumov-Geras.", "67P")
