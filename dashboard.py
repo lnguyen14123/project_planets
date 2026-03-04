@@ -116,7 +116,7 @@ comets = df[df["object_type"] == "comet"]
 
 # ── Metric cards ───────────────────────────────────────────
 st.subheader("Current Snapshot")
-cols = st.columns(4)
+cols = st.columns([1, 1, 2, 2])
 with cols[0]:
     st.metric("Planets tracked", len(planets))
 with cols[1]:
@@ -129,7 +129,6 @@ with cols[3]:
     farthest = df.loc[df["dist_from_sun_au"].idxmax()]
     st.metric("Farthest object",
               f"{farthest['target_name']} — {farthest['dist_from_sun_au']:.1f} AU")
-
 st.divider()
 
 # ── Orrery ─────────────────────────────────────────────────
