@@ -2,41 +2,62 @@ import requests
 import re
 from datetime import datetime, timezone, timedelta
 
+KM_PER_AU = 149_597_870.7
+
+PLANETS = {
+    "Mercury": "199",
+    "Venus":   "299",
+    "Earth":   "399",
+    "Mars":    "499",
+    "Jupiter": "599",
+    "Saturn":  "699",
+    "Uranus":  "799",
+    "Neptune": "899"
+}
+COMETS = {
+    "Halley":            "90000030",
+    "Hale-Bopp":         "90000765",
+    "Churyumov–Geras.":  "90000772",  # Rosetta mission comet
+    "Encke":             "90000035",
+}
+
 
 def parse_xyz(result_text):
-    """Extract X, Y, Z position values from Horizons response text."""
-
-    # Find the $$SOE (Start Of Ephemeris) section
     soe_index = result_text.find("$$SOE")
     eoe_index = result_text.find("$$EOE")
-
     if soe_index == -1 or eoe_index == -1:
-        print("❌ Couldn't find ephemeris data block")
         return None
-
-    # Grab just the data between $$SOE and $$EOE
     data_block = result_text[soe_index:eoe_index]
-    print(f"\n--- Data block ---\n{data_block}\n")
 
-    # Extract X, Y, Z using regex
     x = re.search(r"X\s*=\s*([-\d.E+]+)", data_block)
     y = re.search(r"Y\s*=\s*([-\d.E+]+)", data_block)
     z = re.search(r"Z\s*=\s*([-\d.E+]+)", data_block)
+    vx = re.search(r"VX\s*=\s*([-\d.E+]+)", data_block)
+    vy = re.search(r"VY\s*=\s*([-\d.E+]+)", data_block)
+    vz = re.search(r"VZ\s*=\s*([-\d.E+]+)", data_block)
 
     if x and y and z:
-        return {
-            "x_au": float(x.group(1)),
-            "y_au": float(y.group(1)),
-            "z_au": float(z.group(1))
+        coords = {
+            "x_au":  float(x.group(1)) / KM_PER_AU,
+            "y_au":  float(y.group(1)) / KM_PER_AU,
+            "z_au":  float(z.group(1)) / KM_PER_AU,
         }
-    else:
-        print("❌ Couldn't parse X Y Z values")
-        return None
+        # Velocity is already in km/s, no conversion needed
+        if vx and vy and vz:
+            coords["vx_kms"] = float(vx.group(1))
+            coords["vy_kms"] = float(vy.group(1))
+            coords["vz_kms"] = float(vz.group(1))
+            # Total speed
+            coords["speed_kms"] = round(
+                (coords["vx_kms"]**2 + coords["vy_kms"]
+                 ** 2 + coords["vz_kms"]**2) ** 0.5, 3
+            )
+        return coords
+    return None
 
 
-def test_horizons(planet_name, command_id):
+def query_horizons(command_id):
     url = "https://ssd.jpl.nasa.gov/api/horizons.api"
-
     now = datetime.now(timezone.utc)
     start = now.strftime("%Y-%m-%d %H:%M")
     stop = (now + timedelta(minutes=1)).strftime("%Y-%m-%d %H:%M")
@@ -54,25 +75,65 @@ def test_horizons(planet_name, command_id):
         "VEC_TABLE":  "2"
     }
 
-    print(f"🔭 Querying NASA Horizons for {planet_name}...")
     response = requests.get(url, params=params)
-
     if response.status_code == 200:
-        data = response.json()
-        coords = parse_xyz(data["result"])
-
-        if coords:
-            print(f"✅ {planet_name} position (AU from Sun):")
-            print(f"   X: {coords['x_au']}")
-            print(f"   Y: {coords['y_au']}")
-            print(f"   Z: {coords['z_au']}")
-
-            # Distance from Sun (pythagorean theorem in 3D)
-            dist = (coords['x_au']**2 + coords['y_au']
-                    ** 2 + coords['z_au']**2) ** 0.5
-            print(f"   📏 Distance from Sun: {dist:.3f} AU")
-    else:
-        print(f"❌ Error: {response.status_code}")
+        return response.json()
+    return None
 
 
-test_horizons("Mars", "499")
+def poll_objects(objects, object_type):
+    """Poll any dict of {name: command_id} from Horizons."""
+    results = []
+    for name, cmd in objects.items():
+        data = query_horizons(cmd)
+        if data and "result" in data:
+            # Check for error in response
+            if "error" in data:
+                print(f"❌ {name:<25} | API error")
+                continue
+
+            coords = parse_xyz(data["result"])
+            if coords:
+                dist = (coords["x_au"]**2 + coords["y_au"]
+                        ** 2 + coords["z_au"]**2) ** 0.5
+                record = {
+                    "target_name":      name,
+                    "object_type":      object_type,
+                    "timestamp":        datetime.now(timezone.utc).isoformat(),
+                    "x_au":             round(coords["x_au"], 6),
+                    "y_au":             round(coords["y_au"], 6),
+                    "z_au":             round(coords["z_au"], 6),
+                    "dist_from_sun_au": round(dist, 6),
+                    "speed_kms":        coords.get("speed_kms", None)
+                }
+                results.append(record)
+                speed_str = f"{coords['speed_kms']} km/s" if coords.get(
+                    "speed_kms") else "n/a"
+                print(f"✅ {name:<25} | {dist:.3f} AU | 🚀 {speed_str}")
+            else:
+                print(f"❌ {name:<25} | Failed to parse")
+        else:
+            print(f"❌ {name:<25} | API call failed")
+    return results
+
+
+if __name__ == "__main__":
+    print("🪐 Planets\n" + "─"*50)
+    planets = poll_objects(PLANETS, "planet")
+
+    print("\n☄️  Comets\n" + "─"*50)
+    comets = poll_objects(COMETS, "comet")
+
+    all_objects = planets + comets
+    print(f"\n🌌 Total: {len(all_objects)} objects pulled successfully!")
+
+    # Print speed leaderboard
+    sorted_by_speed = sorted(
+        [o for o in all_objects if o["speed_kms"]],
+        key=lambda x: x["speed_kms"], reverse=True
+    )
+    print("\n🏆 Speed Leaderboard (km/s):")
+    print("─"*40)
+    for obj in sorted_by_speed:
+        bar = "█" * int(obj["speed_kms"] / 3)
+        print(f"  {obj['target_name']:<25} {obj['speed_kms']:>7} km/s  {bar}")
