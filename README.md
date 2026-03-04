@@ -8,7 +8,7 @@ Check it out here! https://projectplanets.streamlit.app/
 
 I also created a Tableau Public dashboard you can check out here! https://public.tableau.com/app/profile/luc.nguyen6635/viz/planets_17726414911280/Dashboard1?publish=yes
 
-![Solar System Orrery](orrery.png)
+![Solar System Orrery](images/orrery.png)
 
 ---
 
