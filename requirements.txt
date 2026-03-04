@@ -25,3 +25,4 @@ s3transfer==0.16.0
 six==1.17.0
 tzdata==2025.3
 urllib3==2.6.3
+plotly==5.18.0
