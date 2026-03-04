@@ -203,7 +203,7 @@ fig_orrery.update_layout(
                zeroline=False, title="X (AU)"),
     yaxis=dict(range=[-35, 35], showgrid=False,
                zeroline=False, title="Y (AU)"),
-    height=600,
+    height=900,
     showlegend=False,
     margin=dict(l=0, r=0, t=0, b=0)
 )
