@@ -163,15 +163,6 @@ aws events put-rule \
 
 ---
 
-## 🌌 Fun Facts From The Data
-
-- **Mercury** orbits at ~52 km/s — 118,000 mph 🤯
-- **Halley's Comet** is currently 35 AU away, crawling at 0.9 km/s
-- Light takes **248 minutes** (4+ hours) to reach Neptune right now
-- **Hale-Bopp** won't return to the inner solar system for ~2,500 years
-
----
-
 ## 📡 Data Source
 
 All positional data comes from **NASA JPL Horizons** — the same system used 
@@ -185,5 +176,3 @@ Laboratory. Positions are accurate to within kilometers.
 MIT License — free to use, modify, and share.
 
 ---
-
-*Built with 🔭 and real NASA data*
