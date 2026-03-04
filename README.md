@@ -24,6 +24,8 @@ Every 10 minutes, this pipeline:
 
 ---
 
+![Solar System Orrery](images/dashboard_bargraphs.png)
+
 ## Tech Stack
 
 | Layer | Technology |
