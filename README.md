@@ -1,8 +1,8 @@
 # Solar System Live Tracker
 
-A real-time data pipeline that pulls live planetary and comet positions from 
-NASA's Horizons API, streams them through AWS, and visualizes them on an 
-interactive dashboard.
+A real-time data pipeline that pulls live solar system data from 
+NASA's Horizons API, streams through AWS, and visualizes on an 
+interactive dashboard!
 
 Check it out here! https://projectplanets.streamlit.app/
 
@@ -41,19 +41,11 @@ Every 10 minutes, this pipeline:
 
 ## Dashboard Features
 
-- **Live Orrery** — real orbital paths with current positions overlaid
-- **Speed Leaderboard** — see Mercury blazing at 52 km/s vs Halley crawling at 0.9 km/s
-- **Light Travel Time** — how long light takes to reach each object right now
-- **Stats Table** — distance, speed, longitude for all tracked objects
-- **Auto-refresh** — data updates every 10 minutes automatically
-
----
-
-## Tracked Objects
-
-**Planets:** Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune
-
-**Comets:** Halley's Comet, Hale-Bopp, Churyumov-Gerasimenko, Encke
+- **Live Orrery**: real orbital paths with current positions 
+- **Speed Leaderboard**: see current speeds and rankings of solar system objects
+- **Light Travel Time**: how long light takes to reach each object right now
+- **Stats Table**: distance, speed, longitude for all tracked objects
+- **Auto-refresh**: data updates every 10 minutes automatically
 
 ---
 
