@@ -4,7 +4,9 @@ A real-time data pipeline that pulls live planetary and comet positions from
 NASA's Horizons API, streams them through AWS, and visualizes them on an 
 interactive dashboard.
 
-**[🌌 Live Dashboard](your-streamlit-url-here)**
+Check it out here! https://projectplanets.streamlit.app/
+
+I also created a Tableau Public dashboard you can check out here! https://public.tableau.com/app/profile/luc.nguyen6635/viz/planets_17726414911280/Dashboard1?publish=yes
 
 ![Solar System Orrery](orrery.png)
 
@@ -13,7 +15,7 @@ interactive dashboard.
 ## 🚀 What It Does
 
 Every 10 minutes, this pipeline:
-1. Queries **NASA Horizons API** for real positions of 8 planets + 4 comets
+1. Queries **NASA Horizons API** for positions of 8 planets + 4 comets
 2. Streams data through **AWS Kinesis**
 3. Processes + enriches it with **AWS Lambda**
 4. Stores snapshots in **AWS S3**
