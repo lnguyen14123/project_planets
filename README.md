@@ -76,11 +76,9 @@ AWS Athena (SQL)
 Streamlit Dashboard
 ```
 
----
-
 ## 📡 Data Source
 
-All positional data comes from **NASA JPL Horizons** — 
+All positional data comes from **NASA JPL Horizons** 
 
 ---
 
