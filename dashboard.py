@@ -12,8 +12,8 @@ BUCKET = "solar-tracker-lnguyen"
 REGION = "us-west-2"
 
 st.set_page_config(
-    page_title="🔭 Solar System Live Tracker",
-    page_icon="🔭",
+    page_title="Solar System Live Tracker",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -95,14 +95,14 @@ def load_orbit_data():
 
 
 # ── Header ─────────────────────────────────────────────────
-st.title("🔭 Solar System Live Tracker")
+st.title("Solar System Live Tracker")
 st.caption(
     f"Data from NASA Horizons API • Updates every 10 minutes • {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
 
 # ── Load data ──────────────────────────────────────────────
 try:
     df, latest_file = load_latest_data()
-    st.caption(f"📦 Latest snapshot: `{latest_file}`")
+    st.caption(f"Latest snapshot: `{latest_file}`")
 except Exception as e:
     st.error(f"Error loading data: {e}")
     st.stop()
@@ -115,25 +115,25 @@ planets = df[df["object_type"] == "planet"]
 comets = df[df["object_type"] == "comet"]
 
 # ── Metric cards ───────────────────────────────────────────
-st.subheader("📊 Current Snapshot")
+st.subheader("Current Snapshot")
 cols = st.columns(4)
 with cols[0]:
-    st.metric("🪐 Planets tracked", len(planets))
+    st.metric("Planets tracked", len(planets))
 with cols[1]:
-    st.metric("☄️ Comets tracked", len(comets))
+    st.metric("Comets tracked", len(comets))
 with cols[2]:
     fastest = df.loc[df["speed_kms"].idxmax()]
-    st.metric("🏆 Fastest object",
+    st.metric("Fastest object",
               f"{fastest['target_name']} — {fastest['speed_kms']} km/s")
 with cols[3]:
     farthest = df.loc[df["dist_from_sun_au"].idxmax()]
-    st.metric("🌌 Farthest object",
+    st.metric("Farthest object",
               f"{farthest['target_name']} — {farthest['dist_from_sun_au']:.1f} AU")
 
 st.divider()
 
 # ── Orrery ─────────────────────────────────────────────────
-st.subheader("🌌 Live Orrery")
+st.subheader("Live Orrery")
 
 COLORS = {
     "Mercury": "#b5b5b5", "Venus": "#e8cda0", "Earth": "#4fa3e0",
@@ -216,7 +216,7 @@ st.divider()
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("🏆 Speed Leaderboard")
+    st.subheader("Speed Leaderboard")
     df_sorted = df.sort_values("speed_kms", ascending=True)
     fig_speed = px.bar(
         df_sorted, x="speed_kms", y="target_name",
@@ -233,7 +233,7 @@ with col1:
     st.plotly_chart(fig_speed, use_container_width=True)
 
 with col2:
-    st.subheader("⏱️ Light Travel Time from Sun")
+    st.subheader("Light Travel Time from Sun")
     df_sorted2 = df.sort_values("light_travel_min", ascending=True)
     fig_light = px.bar(
         df_sorted2, x="light_travel_min", y="target_name",
@@ -252,7 +252,7 @@ with col2:
 st.divider()
 
 # ── Stats table ────────────────────────────────────────────
-st.subheader("📋 Full Stats Table")
+st.subheader("Full Stats Table")
 display_df = df[[
     "target_name", "object_type", "dist_from_sun_au",
     "speed_kms", "dist_from_earth_au", "light_travel_min",
@@ -275,7 +275,7 @@ st.dataframe(
 st.divider()
 col1, col2 = st.columns([1, 4])
 with col1:
-    if st.button("🔄 Refresh Data"):
+    if st.button("Refresh Data"):
         st.cache_data.clear()
         st.rerun()
 with col2:
