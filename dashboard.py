@@ -158,19 +158,16 @@ fig_orrery.add_trace(go.Scatter(
 
 # Orbit rings
 for _, row in df.iterrows():
-    import numpy as np
     r = row["dist_from_sun_au"]
     theta = np.linspace(0, 2*np.pi, 100)
     fig_orrery.add_trace(go.Scatter(
         x=r*np.cos(theta), y=r*np.sin(theta),
         mode="lines",
-        line=dict(color=COLORS.get(
-            row["target_name"], "white"), width=0.5, dash="dot"),
-        opacity=0.2,
+        line=dict(color=COLORS.get(row["target_name"], "white"), width=1.5),
+        opacity=0.5,
         showlegend=False,
         hoverinfo="skip"
     ))
-
 # Planet/comet positions
 for _, row in df.iterrows():
     color = COLORS.get(row["target_name"], "white")
