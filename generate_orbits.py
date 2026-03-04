@@ -1,132 +1,77 @@
-import requests
-import re
-import csv
-from datetime import datetime, timezone
+import numpy as np
+import json
+import boto3
 
-KM_PER_AU = 149_597_870.7
+# Orbital elements (a in AU, e = eccentricity, i/omega/Omega in degrees)
+# Source: NASA JPL fact sheets
+ORBITAL_ELEMENTS = {
+    # name:        (a,      e,      i,      Omega,   omega)
+    "Mercury":     (0.387,  0.2056, 7.005,  48.331,  29.124),
+    "Venus":       (0.723,  0.0068, 3.395,  76.680,  54.884),
+    "Earth":       (1.000,  0.0167, 0.000,  0.000,   102.94),
+    "Mars":        (1.524,  0.0934, 1.850,  49.558,  286.50),
+    "Jupiter":     (5.203,  0.0489, 1.303,  100.46,  273.87),
+    "Saturn":      (9.537,  0.0565, 2.485,  113.66,  339.39),
+    "Uranus":      (19.191, 0.0472, 0.773,  74.006,  96.998),
+    "Neptune":     (30.069, 0.0086, 1.770,  131.78,  273.19),
 
-PLANETS = {
-    "Mercury": ("199", "1995-Jan-01", "2026-Jan-01", "20d"),
-    "Venus":   ("299", "1995-Jan-01", "2026-Jan-01", "20d"),
-    "Earth":   ("399", "1995-Jan-01", "2026-Jan-01", "20d"),
-    "Mars":    ("499", "1995-Jan-01", "2026-Jan-01", "20d"),
-    "Jupiter": ("599", "1995-Jan-01", "2026-Jan-01", "20d"),
-    "Saturn":  ("699", "1995-Jan-01", "2026-Jan-01", "20d"),
-    "Uranus":  ("799", "1995-Jan-01", "2026-Jan-01", "20d"),
-    "Neptune": ("899", "1995-Jan-01", "2026-Jan-01", "20d"),
+    "Halley":      (17.834, 0.9671, 162.26, 58.420,  111.33),
+    "Hale-Bopp":   (186.0,  0.9951, 89.43,  282.47,  130.59),
+    "Churyumov-Geras.": (3.463, 0.6412, 7.043, 50.147, 12.780),
+    "Encke":       (2.217,  0.8483, 11.78,  334.57,  186.54),
 }
 
-COMETS = {
-    "Halley":           ("90000030", "1995-Jan-01", "2062-Jan-01", "20d"),
-    "Hale-Bopp":        ("90000765", "1995-Jan-01", "2026-Jan-01", "20d"),
-    "Churyumov-Geras.": ("90000772", "1995-Jan-01", "2026-Jan-01", "20d"),
-    "Encke":            ("90000035", "1995-Jun-01", "2026-Jan-01", "20d"),
-}
+
+def compute_orbit(a, e, i, Omega, omega, n_points=300):
+    """
+    Compute x,y coordinates of an orbit from Keplerian elements.
+    Returns arrays of x, y in AU (heliocentric ecliptic plane).
+    """
+    # Eccentric anomaly from 0 to 2pi
+    E = np.linspace(0, 2 * np.pi, n_points)
+
+    # Position in orbital plane
+    x_orb = a * (np.cos(E) - e)
+    y_orb = a * np.sqrt(1 - e**2) * np.sin(E)
+
+    # Convert angles to radians
+    i_r = np.radians(i)
+    Omega_r = np.radians(Omega)
+    omega_r = np.radians(omega)
+
+    # Rotation matrices — orbital plane → ecliptic plane
+    cos_O, sin_O = np.cos(Omega_r), np.sin(Omega_r)
+    cos_o, sin_o = np.cos(omega_r), np.sin(omega_r)
+    cos_i, sin_i = np.cos(i_r),     np.sin(i_r)
+
+    # Full rotation
+    x = ((cos_O*cos_o - sin_O*sin_o*cos_i) * x_orb +
+         (-cos_O*sin_o - sin_O*cos_o*cos_i) * y_orb)
+
+    y = ((sin_O*cos_o + cos_O*sin_o*cos_i) * x_orb +
+         (-sin_O*sin_o + cos_O*cos_o*cos_i) * y_orb)
+
+    return x.tolist(), y.tolist()
 
 
-def query_orbit(name, command_id, start, stop, step):
-    url = "https://ssd.jpl.nasa.gov/api/horizons.api"
-    params = {
-        "format":     "json",
-        "COMMAND":    command_id,
-        "MAKE_EPHEM": "YES",
-        "EPHEM_TYPE": "VECTORS",
-        "CENTER":     "500@10",
-        "START_TIME": f"'{start}'",
-        "STOP_TIME":  f"'{stop}'",
-        "STEP_SIZE":  step,
-        "OBJ_DATA":   "NO",
-        "VEC_TABLE":  "2"
-    }
-    r = requests.get(url, params=params)
-    if r.status_code == 200:
-        return r.json()
-    return None
+def generate_and_upload():
+    orbit_data = {}
 
+    for name, (a, e, i, Omega, omega) in ORBITAL_ELEMENTS.items():
+        x, y = compute_orbit(a, e, i, Omega, omega)
+        orbit_data[name] = {"x": x, "y": y}
+        print(f"✅ {name:<25} a={a} AU, e={e}")
 
-def parse_all_positions(result_text, name, object_type):
-
-    soe_index = result_text.find("$$SOE")
-    eoe_index = result_text.find("$$EOE")
-    if soe_index == -1 or eoe_index == -1:
-        return []
-
-    block = result_text[soe_index:eoe_index]
-    lines = block.split("\n")
-    records = []
-    date_str = None
-
-    for line in lines:
-        # Date line looks like: 2461103.5 = A.D. 2026-Mar-04 ...
-        if "A.D." in line:
-            try:
-                raw_date = line.split("A.D.")[1].strip().split()[0]
-                try:
-                    date_str = datetime.strptime(
-                        raw_date, "%Y-%b-%d").strftime("%m/%d/%Y")
-                except:
-                    date_str = raw_date
-            except:
-                date_str = None
-
-        # Position line
-        if "X =" in line and "Y =" in line:
-            x = re.search(r"X\s*=\s*([-\d.E+]+)", line)
-            y = re.search(r"Y\s*=\s*([-\d.E+]+)", line)
-            z = re.search(r"Z\s*=\s*([-\d.E+]+)", line)
-            if x and y and z and date_str:
-                x_au = float(x.group(1)) / KM_PER_AU
-                y_au = float(y.group(1)) / KM_PER_AU
-                z_au = float(z.group(1)) / KM_PER_AU
-                dist = (x_au**2 + y_au**2 + z_au**2) ** 0.5
-                records.append({
-                    "target_name":       name,
-                    "object_type":       object_type,
-                    "date":              date_str,
-                    "x_au":              round(x_au, 6),
-                    "y_au":              round(y_au, 6),
-                    "z_au":              round(z_au, 6),
-                    "dist_from_sun_au":  round(dist, 6),
-                })
-    return records
-
-
-def generate_orbit_data():
-    all_records = []
-
-    print("🪐 Fetching planet orbits...")
-    for name, (cmd, start, stop, step) in PLANETS.items():
-        print(f"  fetching {name} ({start} → {stop}, every {step})...")
-        data = query_orbit(name, cmd, start, stop, step)
-        if data and "result" in data:
-            records = parse_all_positions(data["result"], name, "planet")
-            all_records.extend(records)
-            print(f"  ✅ {name} — {len(records)} points")
-        else:
-            print(f"  ❌ {name} failed")
-
-    print("\n☄️  Fetching comet orbits...")
-    for name, (cmd, start, stop, step) in COMETS.items():
-        print(f"  fetching {name} ({start} → {stop}, every {step})...")
-        data = query_orbit(name, cmd, start, stop, step)
-        if data and "result" in data:
-            records = parse_all_positions(data["result"], name, "comet")
-            all_records.extend(records)
-            print(f"  ✅ {name} — {len(records)} points")
-        else:
-            print(f"  ❌ {name} failed")
-
-    # Save to CSV
-    if all_records:
-        filename = "orbit_data_past.csv"
-        with open(filename, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=all_records[0].keys())
-            writer.writeheader()
-            writer.writerows(all_records)
-        print(f"\n✅ Saved {len(all_records)} orbit points to {filename}!")
-
-    return all_records
+    # Upload to S3
+    boto3.client("s3", region_name="us-west-2").put_object(
+        Bucket="solar-tracker-lnguyen",
+        Key="orbits/orbit_elements.json",
+        Body=json.dumps(orbit_data)
+    )
+    print(f"\n✅ Uploaded orbital elements data to S3!")
+    print(f"📦 {len(orbit_data)} objects, {300} points each = {len(orbit_data)*300} total points")
+    print(f"   (vs ~1061 uneven data points before)")
 
 
 if __name__ == "__main__":
-    generate_orbit_data()
+    generate_and_upload()

@@ -86,12 +86,11 @@ def load_orbit_data():
         aws_secret_access_key=st.secrets["default"]["AWS_SECRET_ACCESS_KEY"]
     )
     try:
-        obj = s3.get_object(Bucket=BUCKET, Key="orbits/orbit_data.json")
-        data = json.loads(obj["Body"].read().decode("utf-8"))
-        return pd.DataFrame(data)
+        obj = s3.get_object(Bucket=BUCKET, Key="orbits/orbit_elements.json")
+        return json.loads(obj["Body"].read().decode("utf-8"))
     except Exception as e:
         st.warning(f"Orbit data not found: {e}")
-        return pd.DataFrame()
+        return {}
 
 
 # ── Header ─────────────────────────────────────────────────
@@ -153,26 +152,21 @@ fig_orrery.add_trace(go.Scatter(
     name="Sun", hoverinfo="name"
 ))
 
-# Orbit traces from real data
-orbit_df = load_orbit_data()
 
-if not orbit_df.empty:
-    for name in orbit_df["target_name"].unique():
-        obj_orbit = orbit_df[orbit_df["target_name"] == name].copy()
-        obj_orbit["date"] = pd.to_datetime(obj_orbit["date"])
-        obj_orbit = obj_orbit.sort_values("date")
+# Orbit traces from Keplerian elements
+orbit_data = load_orbit_data()
 
-        color = COLORS.get(name, "white")
-        fig_orrery.add_trace(go.Scatter(
-            x=obj_orbit["x_au"].astype(float),
-            y=obj_orbit["y_au"].astype(float),
-            mode="lines",
-            line=dict(color=color, width=1.5),
-            opacity=0.5,
-            name=name,
-            showlegend=False,
-            hoverinfo="skip"
-        ))
+for name, coords in orbit_data.items():
+    color = COLORS.get(name, "white")
+    fig_orrery.add_trace(go.Scatter(
+        x=coords["x"], y=coords["y"],
+        mode="lines",
+        line=dict(color=color, width=1.5),
+        opacity=0.5,
+        name=name,
+        showlegend=False,
+        hoverinfo="skip"
+    ))
 
 # Planet/comet positions
 for _, row in df.iterrows():
