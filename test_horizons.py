@@ -117,23 +117,51 @@ def poll_objects(objects, object_type):
     return results
 
 
+def test_object(name, cmd):
+    data = query_horizons(cmd)
+    if data and "result" in data:
+        print(f"\n--- {name} ({cmd}) ---")
+        # Print the target body line
+        for line in data["result"].split("\n"):
+            if "Target body name" in line:
+                print(line)
+                break
+
+
+def search_horizons(name):
+    url = "https://ssd.jpl.nasa.gov/api/horizons.api"
+    params = {
+        "format":   "json",
+        "COMMAND":  f"'{name}'",
+        "OBJ_DATA": "NO",
+        "MAKE_EPHEM": "NO"
+    }
+    r = requests.get(url, params=params)
+    if r.status_code == 200:
+        print(f"\n--- Search: {name} ---")
+        print(r.json().get("result", "")[:800])
+
+
 if __name__ == "__main__":
-    print("🪐 Planets\n" + "─"*50)
-    planets = poll_objects(PLANETS, "planet")
+    # print("🪐 Planets\n" + "─"*50)
+    # planets = poll_objects(PLANETS, "planet")
 
-    print("\n☄️  Comets\n" + "─"*50)
-    comets = poll_objects(COMETS, "comet")
+    # print("\n☄️  Comets\n" + "─"*50)
+    # comets = poll_objects(COMETS, "comet")
 
-    all_objects = planets + comets
-    print(f"\n🌌 Total: {len(all_objects)} objects pulled successfully!")
+    # all_objects = planets + comets
+    # print(f"\n🌌 Total: {len(all_objects)} objects pulled successfully!")
 
-    # Print speed leaderboard
-    sorted_by_speed = sorted(
-        [o for o in all_objects if o["speed_kms"]],
-        key=lambda x: x["speed_kms"], reverse=True
-    )
-    print("\n🏆 Speed Leaderboard (km/s):")
-    print("─"*40)
-    for obj in sorted_by_speed:
-        bar = "█" * int(obj["speed_kms"] / 3)
-        print(f"  {obj['target_name']:<25} {obj['speed_kms']:>7} km/s  {bar}")
+    # # Print speed leaderboard
+    # sorted_by_speed = sorted(
+    #     [o for o in all_objects if o["speed_kms"]],
+    #     key=lambda x: x["speed_kms"], reverse=True
+    # )
+    # print("\n🏆 Speed Leaderboard (km/s):")
+    # print("─"*40)
+    # for obj in sorted_by_speed:
+    #     bar = "█" * int(obj["speed_kms"] / 3)
+    #     print(f"  {obj['target_name']:<25} {obj['speed_kms']:>7} km/s  {bar}")
+
+    search_horizons("Hale-Bopp")
+    search_horizons("Churyumov-Gerasimenko")
