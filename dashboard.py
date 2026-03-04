@@ -124,7 +124,7 @@ with cols[1]:
 with cols[2]:
     fastest = df.loc[df["speed_kms"].idxmax()]
     st.metric("Fastest object",
-              f"{fastest['target_name']} — {round(fastest['speed_kms']} km/s", 1))
+              f"{fastest['target_name']} — {round(fastest['speed_kms'], 1)} km/s")
 with cols[3]:
     farthest = df.loc[df["dist_from_sun_au"].idxmax()]
     st.metric("Farthest object",
