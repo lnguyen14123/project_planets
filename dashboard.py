@@ -75,24 +75,22 @@ def load_latest_data():
 
     return df, latest
 
-# ── Load orbit data from S3 ────────────────────────────────
+# Load orbit data
 
 
-@st.cache_data(ttl=3600)  # refresh every hour
+@st.cache_data(ttl=3600)
 def load_orbit_data():
-
     s3 = boto3.client(
-        "s3",
-        region_name=REGION,
+        "s3", region_name=REGION,
         aws_access_key_id=st.secrets["default"]["AWS_ACCESS_KEY_ID"],
         aws_secret_access_key=st.secrets["default"]["AWS_SECRET_ACCESS_KEY"]
     )
-
     try:
         obj = s3.get_object(Bucket=BUCKET, Key="orbits/orbit_data.json")
         data = json.loads(obj["Body"].read().decode("utf-8"))
         return pd.DataFrame(data)
-    except:
+    except Exception as e:
+        st.warning(f"Orbit data not found: {e}")
         return pd.DataFrame()
 
 
@@ -156,19 +154,24 @@ fig_orrery.add_trace(go.Scatter(
     name="Sun", hoverinfo="name"
 ))
 
-# Orbit rings
-for _, row in df.iterrows():
-    r = row["dist_from_sun_au"]
-    theta = np.linspace(0, 2*np.pi, 100)
-    fig_orrery.add_trace(go.Scatter(
-        x=r*np.cos(theta), y=r*np.sin(theta),
-        mode="lines",
-        line=dict(color=COLORS.get(row["target_name"], "white"), width=1.5),
-        opacity=0.5,
-        showlegend=False,
-        hoverinfo="skip"
-    ))
-# Planet/comet positions
+# Orbit traces from real data
+orbit_df = load_orbit_data()
+
+if not orbit_df.empty:
+    for name in orbit_df["target_name"].unique():
+        obj_orbit = orbit_df[orbit_df["target_name"]
+                             == name].sort_values("date")
+        color = COLORS.get(name, "white")
+        fig_orrery.add_trace(go.Scatter(
+            x=obj_orbit["x_au"].astype(float),
+            y=obj_orbit["y_au"].astype(float),
+            mode="lines",
+            line=dict(color=color, width=1.5),
+            opacity=0.5,
+            name=name,
+            showlegend=False,
+            hoverinfo="skip"
+        ))  # Planet/comet positions
 for _, row in df.iterrows():
     color = COLORS.get(row["target_name"], "white")
     symbol = "circle" if row["object_type"] == "planet" else "star"
