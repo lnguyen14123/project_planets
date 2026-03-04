@@ -159,8 +159,10 @@ orbit_df = load_orbit_data()
 
 if not orbit_df.empty:
     for name in orbit_df["target_name"].unique():
-        obj_orbit = orbit_df[orbit_df["target_name"]
-                             == name].sort_values("date")
+        obj_orbit = orbit_df[orbit_df["target_name"] == name].copy()
+        obj_orbit["date"] = pd.to_datetime(obj_orbit["date"])
+        obj_orbit = obj_orbit.sort_values("date")
+
         color = COLORS.get(name, "white")
         fig_orrery.add_trace(go.Scatter(
             x=obj_orbit["x_au"].astype(float),
@@ -171,7 +173,9 @@ if not orbit_df.empty:
             name=name,
             showlegend=False,
             hoverinfo="skip"
-        ))  # Planet/comet positions
+        ))
+
+# Planet/comet positions
 for _, row in df.iterrows():
     color = COLORS.get(row["target_name"], "white")
     symbol = "circle" if row["object_type"] == "planet" else "star"
