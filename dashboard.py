@@ -38,7 +38,13 @@ st.markdown("""
 
 @st.cache_data(ttl=600)  # refresh every 10 min
 def load_latest_data():
-    s3 = boto3.client("s3", region_name=REGION)
+
+    s3 = boto3.client(
+        "s3",
+        region_name=REGION,
+        aws_access_key_id=st.secrets["default"]["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=st.secrets["default"]["AWS_SECRET_ACCESS_KEY"]
+    )
 
     # List all snapshots and get the latest
     response = s3.list_objects_v2(Bucket=BUCKET, Prefix="raw/")
@@ -74,7 +80,14 @@ def load_latest_data():
 
 @st.cache_data(ttl=3600)  # refresh every hour
 def load_orbit_data():
-    s3 = boto3.client("s3", region_name=REGION)
+
+    s3 = boto3.client(
+        "s3",
+        region_name=REGION,
+        aws_access_key_id=st.secrets["default"]["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=st.secrets["default"]["AWS_SECRET_ACCESS_KEY"]
+    )
+
     try:
         obj = s3.get_object(Bucket=BUCKET, Key="orbits/orbit_data.json")
         data = json.loads(obj["Body"].read().decode("utf-8"))
